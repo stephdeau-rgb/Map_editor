@@ -4,6 +4,15 @@ const ctx = canvas.getContext("2d");
 const zoomLabelEl = document.getElementById("zoomLabel");
 const selectedToolLabelEl = document.getElementById("selectedToolLabel");
 
+// JSON panel
+const toggleJsonPanelBtn = document.getElementById("toggleJsonPanel");
+const jsonPanelEl = document.getElementById("jsonPanel");
+const jsonTextEl = document.getElementById("jsonText");
+const jsonMsgEl = document.getElementById("jsonMsg");
+const copyJsonBtn = document.getElementById("copyJson");
+const pasteImportJsonBtn = document.getElementById("pasteImportJson");
+const formatJsonBtn = document.getElementById("formatJson");
+
 // Mode buttons
 const modeButtons = Array.from(document.querySelectorAll(".mode-btn"));
 const terrainToolsEl = document.getElementById("terrainTools");
@@ -31,8 +40,8 @@ let viewOffsetX = 0;
 let viewOffsetY = 0;
 
 // Editor state
-let mode = "terrain";            // "terrain" | "units" | "forts"
-let currentTile = "floor";       // terrain tool
+let mode = "terrain";
+let currentTile = "floor";
 let selectedUnitId = null;
 let selectedFortId = null;
 
@@ -46,7 +55,6 @@ let gesture = {
   active: false,
   startDist: 0,
   startScale: 1,
-  startCenter: { x: 0, y: 0 },
   lastCenter: { x: 0, y: 0 }
 };
 
@@ -82,6 +90,8 @@ function createMap(w, h) {
   resetViewToFit();
   draw();
   refreshSelectionUI();
+  syncJsonTextareaFromMap(false);
+  toastJson("Map créée.", "ok");
 }
 
 function worldSizePx() {
@@ -94,19 +104,17 @@ function resizeCanvasToCSS() {
   const dpr = window.devicePixelRatio || 1;
   canvas.width = Math.max(1, Math.floor(rect.width * dpr));
   canvas.height = Math.max(1, Math.floor(rect.height * dpr));
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // normalize to CSS pixels
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
 function resetViewToFit() {
   resizeCanvasToCSS();
-
   const rect = canvas.getBoundingClientRect();
   const canvasW = rect.width;
   const canvasH = rect.height;
 
   const ws = worldSizePx();
   const fitScale = Math.min((canvasW - 16) / ws.w, (canvasH - 16) / ws.h);
-
   viewScale = clamp(fitScale, 0.2, 2);
 
   const worldW = ws.w * viewScale;
@@ -174,7 +182,6 @@ function getSelectedFort() {
 }
 
 function nextId(prefix) {
-  // auto-id: P1/E1/F1...
   let n = 1;
   while (true) {
     const id = `${prefix}${n}`;
@@ -201,7 +208,7 @@ function draw() {
   ctx.translate(viewOffsetX, viewOffsetY);
   ctx.scale(viewScale, viewScale);
 
-  // Visible tile culling
+  // Culling
   const invScale = 1 / viewScale;
   const left = (-viewOffsetX) * invScale;
   const top = (-viewOffsetY) * invScale;
@@ -234,7 +241,6 @@ function draw() {
     ctx.save();
     ctx.translate(cx, cy);
 
-    // base square
     ctx.fillStyle = (f.owner === "player") ? "rgba(120,180,255,0.85)" : "rgba(255,120,120,0.85)";
     ctx.strokeStyle = "rgba(0,0,0,0.55)";
     ctx.lineWidth = 2;
@@ -243,14 +249,12 @@ function draw() {
     ctx.fill();
     ctx.stroke();
 
-    // label
     ctx.fillStyle = "rgba(0,0,0,0.8)";
     ctx.font = `bold ${Math.max(12, baseTileSize * 0.28)}px system-ui`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("F", 0, 0);
 
-    // selection ring
     if (f.id === selectedFortId) {
       ctx.strokeStyle = "rgba(255,255,255,0.95)";
       ctx.lineWidth = 3;
@@ -258,7 +262,6 @@ function draw() {
       ctx.rect(-baseTileSize * 0.33, -baseTileSize * 0.33, baseTileSize * 0.66, baseTileSize * 0.66);
       ctx.stroke();
     }
-
     ctx.restore();
   }
 
@@ -268,7 +271,6 @@ function draw() {
 
     const cx = u.x * baseTileSize + baseTileSize / 2;
     const cy = u.y * baseTileSize + baseTileSize / 2;
-
     const radius = baseTileSize * 0.28;
 
     ctx.beginPath();
@@ -276,19 +278,16 @@ function draw() {
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.fill();
 
-    // border
     ctx.strokeStyle = "rgba(0,0,0,0.55)";
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // class letter
     ctx.fillStyle = "rgba(0,0,0,0.85)";
     ctx.font = `bold ${Math.max(12, baseTileSize * 0.30)}px system-ui`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(classShort(u.class), cx, cy);
 
-    // selection ring
     if (u.id === selectedUnitId) {
       ctx.strokeStyle = "rgba(255,255,255,0.95)";
       ctx.lineWidth = 3;
@@ -330,8 +329,6 @@ function updatePalette() {
   document.querySelectorAll(".tile-btn").forEach(b => {
     b.classList.toggle("active", b.dataset.key === currentTile);
   });
-
-  // palette visible only in terrain mode (keeps UI clean)
   document.getElementById("palette").style.display = (mode === "terrain") ? "flex" : "none";
 }
 
@@ -341,13 +338,11 @@ function updateStatusLabel() {
     selectedToolLabelEl.textContent = `Mode: terrain • Tool: ${currentTile}`;
     return;
   }
-
   if (mode === "units") {
     const team = unitTeamEl.value === "player" ? "Allié" : "Ennemi";
     selectedToolLabelEl.textContent = `Mode: units • ${team} • ${classLabel(unitClassEl.value)} • Lvl ${unitLvlEl.value}`;
     return;
   }
-
   if (mode === "forts") {
     const owner = fortOwnerEl.value === "player" ? "Allié" : "Ennemi";
     selectedToolLabelEl.textContent = `Mode: forts • Owner: ${owner}`;
@@ -355,11 +350,8 @@ function updateStatusLabel() {
 }
 
 function refreshSelectionUI() {
-  const u = getSelectedUnit();
-  deleteSelectedUnitBtn.disabled = !u;
-
-  const f = getSelectedFort();
-  deleteSelectedFortBtn.disabled = !f;
+  deleteSelectedUnitBtn.disabled = !getSelectedUnit();
+  deleteSelectedFortBtn.disabled = !getSelectedFort();
 }
 
 // --- Zoom controls ---
@@ -395,6 +387,7 @@ canvas.addEventListener("wheel", (e) => {
   zoomAt(e.clientX, e.clientY, factor);
 }, { passive: false });
 
+// Zoom buttons
 document.getElementById("zoomIn").onclick = () => {
   const r = canvas.getBoundingClientRect();
   zoomAt(r.left + r.width / 2, r.top + r.height / 2, 1.15);
@@ -411,18 +404,14 @@ document.getElementById("zoomReset").onclick = () => {
 // --- Mode switching ---
 function setMode(next) {
   mode = next;
-
-  // reset selections when changing modes (clean mental model)
   selectedUnitId = null;
   selectedFortId = null;
   refreshSelectionUI();
 
-  // Show/hide subtools
   terrainToolsEl.classList.toggle("hidden", mode !== "terrain");
   unitToolsEl.classList.toggle("hidden", mode !== "units");
   fortToolsEl.classList.toggle("hidden", mode !== "forts");
 
-  // Update button active
   for (const b of modeButtons) b.classList.toggle("active", b.dataset.mode === mode);
 
   updatePalette();
@@ -433,14 +422,11 @@ function setMode(next) {
 modeButtons.forEach(b => b.onclick = () => setMode(b.dataset.mode));
 
 // --- Pointer interactions ---
-// Rule:
-// - 1 doigt/souris : action du mode (terrain paint / units place-select-move / forts place-select)
-// - 2 doigts : pan + pinch zoom
 canvas.addEventListener("pointerdown", (e) => {
   canvas.setPointerCapture(e.pointerId);
   pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-  // long press = pipette terrain OU select unit/fort under finger (quick pick)
+  // long press quick pick
   if (pointers.size === 1) {
     clearTimeout(longPressTimer);
     longPressTimer = setTimeout(() => {
@@ -451,6 +437,7 @@ canvas.addEventListener("pointerdown", (e) => {
         currentTile = map.tiles[y][x].t;
         updatePalette();
         updateStatusLabel();
+        toastJson(`Pipette: ${currentTile}`, "ok");
       } else if (mode === "units") {
         const u = findUnitAt(x, y);
         selectedUnitId = u ? u.id : null;
@@ -467,14 +454,13 @@ canvas.addEventListener("pointerdown", (e) => {
     clearTimeout(longPressTimer);
   }
 
-  // Start gesture if 2 pointers
+  // 2 pointers => gesture
   if (pointers.size === 2) {
     painting = false;
     startTwoFingerGesture();
     return;
   }
 
-  // Single pointer action
   handlePrimaryAction(e.clientX, e.clientY, true);
 });
 
@@ -488,7 +474,6 @@ canvas.addEventListener("pointermove", (e) => {
     return;
   }
 
-  // Terrain paint on drag only
   if (mode === "terrain" && painting) {
     clearTimeout(longPressTimer);
     handlePrimaryAction(e.clientX, e.clientY, false);
@@ -520,10 +505,6 @@ function handlePrimaryAction(clientX, clientY, isDown) {
   }
 
   if (mode === "units") {
-    // tap logic:
-    // - if tap on existing unit => select
-    // - else if a unit is selected => move it here (if no unit on target)
-    // - else place new unit here (if empty)
     if (!isDown) return;
 
     const hit = findUnitAt(x, y);
@@ -537,16 +518,13 @@ function handlePrimaryAction(clientX, clientY, isDown) {
 
     const selected = getSelectedUnit();
     if (selected) {
-      // move (but don't overlap another unit)
       if (!findUnitAt(x, y)) {
-        selected.x = x;
-        selected.y = y;
+        selected.x = x; selected.y = y;
         draw();
       }
       return;
     }
 
-    // place new unit (if empty)
     if (findUnitAt(x, y)) return;
 
     const team = unitTeamEl.value;
@@ -577,24 +555,18 @@ function handlePrimaryAction(clientX, clientY, isDown) {
 
     const selected = getSelectedFort();
     if (selected) {
-      // move fort
       if (!findFortAt(x, y)) {
-        selected.x = x;
-        selected.y = y;
+        selected.x = x; selected.y = y;
         draw();
       }
       return;
     }
 
-    // place new fort (if empty)
     if (findFortAt(x, y)) return;
 
     const owner = fortOwnerEl.value;
     const id = nextId("F");
     map.forts.push({ id, x, y, owner });
-
-    // (prépare la place pour V2 renforts)
-    // map.reinforcements.push({ id: nextId("R"), fortId: id, ... })
 
     selectedFortId = id;
     refreshSelectionUI();
@@ -612,7 +584,6 @@ function startTwoFingerGesture() {
   gesture.active = true;
   gesture.startDist = dist;
   gesture.startScale = viewScale;
-  gesture.startCenter = center;
   gesture.lastCenter = center;
 }
 
@@ -624,7 +595,7 @@ function handleTwoFingerGesture() {
   const center = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
   const dist = Math.hypot(a.x - b.x, a.y - b.y);
 
-  // Pan by center movement
+  // Pan
   const dx = center.x - gesture.lastCenter.x;
   const dy = center.y - gesture.lastCenter.y;
   viewOffsetX += dx;
@@ -652,7 +623,7 @@ function handleTwoFingerGesture() {
   draw();
 }
 
-// --- Buttons / IO ---
+// --- File IO ---
 document.getElementById("newMap").onclick = () => {
   const w = clamp(+mapW.value, 5, 64);
   const h = clamp(+mapH.value, 5, 64);
@@ -670,7 +641,11 @@ document.getElementById("clearMap").onclick = () => {
   draw();
 };
 
-document.getElementById("exportMap").onclick = () => exportMap(map);
+document.getElementById("exportMap").onclick = () => {
+  exportMap(map);
+  syncJsonTextareaFromMap(false);
+  toastJson("Export fichier OK. JSON mis à jour.", "ok");
+};
 
 document.getElementById("importMap").onchange = e => {
   const f = e.target.files?.[0];
@@ -684,6 +659,8 @@ document.getElementById("importMap").onchange = e => {
     refreshSelectionUI();
     updateStatusLabel();
     draw();
+    syncJsonTextareaFromMap(false);
+    toastJson("Import fichier OK.", "ok");
   });
 
   e.target.value = "";
@@ -702,7 +679,6 @@ deleteSelectedFortBtn.onclick = () => {
   const f = getSelectedFort();
   if (!f) return;
   map.forts = map.forts.filter(x => x.id !== f.id);
-  // (plus tard: supprimer aussi les reinforcements liés au fort)
   map.reinforcements = (map.reinforcements || []).filter(r => r.fortId !== f.id);
 
   selectedFortId = null;
@@ -710,11 +686,86 @@ deleteSelectedFortBtn.onclick = () => {
   draw();
 };
 
+// --- JSON Copy/Paste panel logic ---
+toggleJsonPanelBtn.onclick = () => {
+  jsonPanelEl.classList.toggle("hidden");
+  if (!jsonPanelEl.classList.contains("hidden")) {
+    syncJsonTextareaFromMap(false);
+    jsonTextEl.focus();
+  }
+};
+
+copyJsonBtn.onclick = async () => {
+  try {
+    syncJsonTextareaFromMap(true);
+    await navigator.clipboard.writeText(jsonTextEl.value);
+    toastJson("JSON copié dans le presse-papiers.", "ok");
+  } catch (e) {
+    // fallback: select text
+    jsonTextEl.focus();
+    jsonTextEl.select();
+    toastJson("Copie auto indispo : texte sélectionné (Cmd/Ctrl+C).", "warn");
+  }
+};
+
+formatJsonBtn.onclick = () => {
+  try {
+    const raw = jsonTextEl.value.trim();
+    const obj = JSON.parse(raw);
+    jsonTextEl.value = JSON.stringify(obj, null, 2);
+    toastJson("JSON formaté.", "ok");
+  } catch (e) {
+    toastJson("JSON invalide : impossible de formater.", "err");
+  }
+};
+
+pasteImportJsonBtn.onclick = () => {
+  const raw = jsonTextEl.value.trim();
+  if (!raw) {
+    toastJson("Colle un JSON dans la zone avant d’importer.", "warn");
+    return;
+  }
+
+  try {
+    const obj = JSON.parse(raw);
+    const upgraded = migrateIfNeeded(obj); // from io.js
+    validateMap(upgraded);                // from io.js
+
+    map = upgraded;
+    selectedUnitId = null;
+    selectedFortId = null;
+    resetViewToFit();
+    refreshSelectionUI();
+    updateStatusLabel();
+    draw();
+    syncJsonTextareaFromMap(false);
+    toastJson("Import JSON (copier/coller) OK.", "ok");
+  } catch (e) {
+    console.error(e);
+    toastJson("Import KO : JSON invalide ou map non conforme.", "err");
+  }
+};
+
+function syncJsonTextareaFromMap(force) {
+  // force = overwrite even if user is typing (safe default)
+  if (!jsonPanelEl || jsonPanelEl.classList.contains("hidden")) return;
+  if (!force && document.activeElement === jsonTextEl) return;
+  jsonTextEl.value = JSON.stringify(map, null, 2);
+}
+
+function toastJson(msg, kind) {
+  jsonMsgEl.textContent = msg;
+  // no color requirement, keep subtle
+  // kind can be "ok" | "warn" | "err"
+}
+
+// Update status label on tool changes
 unitTeamEl.onchange = updateStatusLabel;
 unitClassEl.onchange = updateStatusLabel;
 unitLvlEl.oninput = updateStatusLabel;
 fortOwnerEl.onchange = updateStatusLabel;
 
+// Responsive
 window.addEventListener("resize", () => {
   clampView();
   draw();
