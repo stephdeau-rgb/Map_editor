@@ -1,140 +1,112 @@
-const canvas = document.getElementById("mapCanvas");
-const ctx = canvas.getContext("2d");
-
-let map = {};
-let tileSize = 32;
-let currentTile = "floor";
-let painting = false;
-
-function createMap(w, h) {
-  map = {
-    version: 1,
-    name: "map_001",
-    w, h,
-    tiles: Array.from({ length: h }, () =>
-      Array.from({ length: w }, () => ({ t: "floor", v: 0 }))
-    )
-  };
-  resizeCanvas();
-  draw();
+* {
+  box-sizing: border-box;
+  touch-action: none;
+  font-family: system-ui, sans-serif;
 }
 
-function resizeCanvas() {
-  tileSize = Math.floor(Math.min(
-    window.innerWidth / map.w,
-    400 / map.h
-  ));
-  canvas.width = map.w * tileSize;
-  canvas.height = map.h * tileSize;
+body {
+  margin: 0;
+  background: #0e0e11;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-function draw() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  for (let y=0;y<map.h;y++) {
-    for (let x=0;x<map.w;x++) {
-      const tile = map.tiles[y][x];
-      ctx.fillStyle = TILESET[tile.t].color;
-      ctx.fillRect(x*tileSize,y*tileSize,tileSize,tileSize);
-      ctx.strokeStyle = "#111";
-      ctx.strokeRect(x*tileSize,y*tileSize,tileSize,tileSize);
-    }
-  }
+header {
+  padding: 8px;
 }
 
-function applyTile(x,y) {
-  if (x<0||y<0||x>=map.w||y>=map.h) return;
-  map.tiles[y][x] = { t: currentTile, v: 0 };
-  draw();
+#controls, #io, #zoomBar {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
 }
 
-canvas.addEventListener("pointerdown", e => {
-  painting = true;
-  handlePointer(e);
-});
-
-canvas.addEventListener("pointermove", e => {
-  if (painting) handlePointer(e);
-});
-
-canvas.addEventListener("pointerup", () => painting = false);
-canvas.addEventListener("pointerleave", () => painting = false);
-
-canvas.addEventListener("contextmenu", e => e.preventDefault());
-
-let longPressTimer = null;
-canvas.addEventListener("pointerdown", e => {
-  longPressTimer = setTimeout(() => {
-    const {x,y} = getCell(e);
-    currentTile = map.tiles[y][x].t;
-    updatePalette();
-  }, 500);
-});
-
-canvas.addEventListener("pointerup", () => clearTimeout(longPressTimer));
-
-function handlePointer(e) {
-  const {x,y} = getCell(e);
-  applyTile(x,y);
+label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-function getCell(e) {
-  const rect = canvas.getBoundingClientRect();
-  const x = Math.floor((e.clientX - rect.left) / tileSize);
-  const y = Math.floor((e.clientY - rect.top) / tileSize);
-  return {x,y};
+input {
+  width: 60px;
 }
 
-function buildPalette() {
-  const p = document.getElementById("palette");
-  p.innerHTML = "";
-  TILE_KEYS.forEach(key => {
-    const b = document.createElement("button");
-    b.className = "tile-btn";
-    b.style.background = TILESET[key].color;
-    b.onclick = () => {
-      currentTile = key;
-      updatePalette();
-    };
-    b.dataset.key = key;
-    p.appendChild(b);
-  });
-  updatePalette();
+button {
+  background: #2a2a35;
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
 }
 
-function updatePalette() {
-  document.querySelectorAll(".tile-btn").forEach(b => {
-    b.classList.toggle("active", b.dataset.key === currentTile);
-  });
+button:active {
+  background: #444;
 }
 
-document.getElementById("newMap").onclick = () => {
-  createMap(+mapW.value, +mapH.value);
-};
+#selectedTileLabel {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  font-size: 14px;
+}
 
-document.getElementById("fillMap").onclick = () => {
-  map.tiles.forEach(row => row.forEach(c => c.t = currentTile));
-  draw();
-};
+#zoomLabel {
+  min-width: 64px;
+  text-align: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  font-size: 14px;
+}
 
-document.getElementById("clearMap").onclick = () => {
-  map.tiles.forEach(row => row.forEach(c => c.t = "floor"));
-  draw();
-};
+canvas {
+  background: #111;
+  margin: 8px 0;
+  border: 1px solid #333;
+  width: min(96vw, 920px);
+  height: min(68vh, 720px);
+  touch-action: none;
+}
 
-document.getElementById("exportMap").onclick = () => exportMap(map);
+#palette {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
 
-document.getElementById("importMap").onchange = e => {
-  importMap(e.target.files[0], imported => {
-    map = imported;
-    resizeCanvas();
-    draw();
-  });
-};
+.tile-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  position: relative;
+}
 
-window.addEventListener("resize", () => {
-  resizeCanvas();
-  draw();
-});
+.tile-btn.active {
+  border-color: #fff;
+}
 
-buildPalette();
-createMap(10,8);
+.tile-btn::after {
+  content: attr(data-name);
+  position: absolute;
+  left: 50%;
+  top: 110%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  opacity: 0.85;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.import input {
+  display: none;
+}
