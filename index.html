@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>Map Editor V1</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header>
+  <h1>Map Editor</h1>
+</header>
+
+<section id="controls">
+  <label>
+    W
+    <input type="number" id="mapW" value="10" min="5" max="64">
+  </label>
+  <label>
+    H
+    <input type="number" id="mapH" value="8" min="5" max="64">
+  </label>
+  <button id="newMap">New</button>
+  <button id="fillMap">Fill</button>
+  <button id="clearMap">Clear</button>
+</section>
+
+<canvas id="mapCanvas"></canvas>
+
+<section id="palette"></section>
+
+<section id="io">
+  <button id="exportMap">Export JSON</button>
+  <label class="import">
+    Import
+    <input type="file" id="importMap" accept=".json">
+  </label>
+</section>
+
+<script src="tileset.js"></script>
+<script src="io.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
