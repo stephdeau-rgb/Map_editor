@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-  <title>Map Editor V2</title>
+  <title>Map Editor V2.2</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -21,6 +21,7 @@
 
   <div id="statusPills">
     <span id="selectedToolLabel" aria-live="polite">Mode: terrain • Tool: floor</span>
+    <button id="toggleJsonPanel" title="Afficher/Masquer JSON">JSON</button>
   </div>
 </section>
 
@@ -40,12 +41,10 @@
 </section>
 
 <section id="subtools">
-  <!-- Terrain tools -->
   <div class="toolRow" id="terrainTools">
     <span class="hint">Peinture terrain : sélectionne une tuile dans la palette.</span>
   </div>
 
-  <!-- Units tools -->
   <div class="toolRow hidden" id="unitTools">
     <label>
       Team
@@ -68,7 +67,6 @@
     <button id="deleteSelectedUnit" class="danger" disabled>Delete Unit</button>
   </div>
 
-  <!-- Forts tools -->
   <div class="toolRow hidden" id="fortTools">
     <label>
       Owner
@@ -79,7 +77,6 @@
     </label>
 
     <button id="deleteSelectedFort" class="danger" disabled>Delete Fort</button>
-
     <span class="hint">Forts = sources de renforts (règles à ajouter ensuite).</span>
   </div>
 </section>
@@ -96,11 +93,30 @@
 <section id="palette"></section>
 
 <section id="io">
-  <button id="exportMap">Export JSON</button>
+  <button id="exportMap">Export JSON (fichier)</button>
   <label class="import">
-    Import
+    Import (fichier)
     <input type="file" id="importMap" accept=".json">
   </label>
+</section>
+
+<!-- JSON Panel Copy/Paste -->
+<section id="jsonPanel" class="hidden">
+  <div class="jsonHeader">
+    <strong>JSON (copier / coller)</strong>
+    <div class="jsonBtns">
+      <button id="copyJson">Copy</button>
+      <button id="pasteImportJson" class="primary">Import</button>
+      <button id="formatJson">Format</button>
+    </div>
+  </div>
+
+  <textarea id="jsonText" spellcheck="false"
+    placeholder="Colle ici un JSON de map (version 2) puis clique Import."></textarea>
+
+  <div class="jsonFooter">
+    <span id="jsonMsg" aria-live="polite"></span>
+  </div>
 </section>
 
 <script src="tileset.js"></script>
