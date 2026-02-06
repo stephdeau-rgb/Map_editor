@@ -1,0 +1,78 @@
+* {
+  box-sizing: border-box;
+  touch-action: none;
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #0e0e11;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+header {
+  padding: 8px;
+}
+
+#controls, #io {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+input {
+  width: 60px;
+}
+
+button {
+  background: #2a2a35;
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+button:active {
+  background: #444;
+}
+
+canvas {
+  background: #111;
+  margin: 8px 0;
+  border: 1px solid #333;
+  touch-action: none;
+}
+
+#palette {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.tile-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+}
+
+.tile-btn.active {
+  border-color: #fff;
+}
+
+.import input {
+  display: none;
+}
