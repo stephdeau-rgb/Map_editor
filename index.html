@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-  <title>Map Editor V1</title>
+  <title>Map Editor V2</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -11,6 +11,18 @@
 <header>
   <h1>Map Editor</h1>
 </header>
+
+<section id="topbar">
+  <div id="modes" role="tablist" aria-label="Modes">
+    <button class="mode-btn active" data-mode="terrain">Terrain</button>
+    <button class="mode-btn" data-mode="units">Units</button>
+    <button class="mode-btn" data-mode="forts">Forts</button>
+  </div>
+
+  <div id="statusPills">
+    <span id="selectedToolLabel" aria-live="polite">Mode: terrain • Tool: floor</span>
+  </div>
+</section>
 
 <section id="controls">
   <label>
@@ -25,8 +37,51 @@
   <button id="newMap">New</button>
   <button id="fillMap">Fill</button>
   <button id="clearMap">Clear</button>
+</section>
 
-  <span id="selectedTileLabel" aria-live="polite">Tile: floor</span>
+<section id="subtools">
+  <!-- Terrain tools -->
+  <div class="toolRow" id="terrainTools">
+    <span class="hint">Peinture terrain : sélectionne une tuile dans la palette.</span>
+  </div>
+
+  <!-- Units tools -->
+  <div class="toolRow hidden" id="unitTools">
+    <label>
+      Team
+      <select id="unitTeam">
+        <option value="player">Allié</option>
+        <option value="enemy">Ennemi</option>
+      </select>
+    </label>
+
+    <label>
+      Classe
+      <select id="unitClass"></select>
+    </label>
+
+    <label>
+      Lvl
+      <input type="number" id="unitLvl" value="1" min="1" max="50" />
+    </label>
+
+    <button id="deleteSelectedUnit" class="danger" disabled>Delete Unit</button>
+  </div>
+
+  <!-- Forts tools -->
+  <div class="toolRow hidden" id="fortTools">
+    <label>
+      Owner
+      <select id="fortOwner">
+        <option value="enemy">Ennemi</option>
+        <option value="player">Allié</option>
+      </select>
+    </label>
+
+    <button id="deleteSelectedFort" class="danger" disabled>Delete Fort</button>
+
+    <span class="hint">Forts = sources de renforts (règles à ajouter ensuite).</span>
+  </div>
 </section>
 
 <section id="zoomBar">
