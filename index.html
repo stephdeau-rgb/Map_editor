@@ -21,9 +21,19 @@
     H
     <input type="number" id="mapH" value="8" min="5" max="64">
   </label>
+
   <button id="newMap">New</button>
   <button id="fillMap">Fill</button>
   <button id="clearMap">Clear</button>
+
+  <span id="selectedTileLabel" aria-live="polite">Tile: floor</span>
+</section>
+
+<section id="zoomBar">
+  <button id="zoomOut" title="Zoom -">−</button>
+  <span id="zoomLabel">100%</span>
+  <button id="zoomIn" title="Zoom +">+</button>
+  <button id="zoomReset" title="Reset view">Reset</button>
 </section>
 
 <canvas id="mapCanvas"></canvas>
