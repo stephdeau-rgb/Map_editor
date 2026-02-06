@@ -38,6 +38,7 @@ header { padding: 8px; }
 .mode-btn.active { outline: 2px solid rgba(255,255,255,0.8); }
 
 #statusPills { display: flex; gap: 8px; align-items: center; }
+
 #selectedToolLabel {
   padding: 8px 10px;
   border-radius: 999px;
@@ -46,7 +47,7 @@ header { padding: 8px; }
   font-size: 14px;
 }
 
-#controls, #io, #zoomBar, #subtools {
+#controls, #io, #zoomBar, #subtools, #jsonPanel {
   width: min(96vw, 920px);
   display: flex;
   gap: 8px;
@@ -65,7 +66,7 @@ header { padding: 8px; }
   justify-content: center;
 }
 
-.hidden { display: none; }
+.hidden { display: none !important; }
 
 label {
   display: flex;
@@ -73,7 +74,7 @@ label {
   gap: 6px;
 }
 
-input, select {
+input, select, textarea {
   background: #141420;
   color: #fff;
   border: 1px solid rgba(255,255,255,0.12);
@@ -96,11 +97,9 @@ button:active { background: #444; }
 button:disabled { opacity: 0.5; }
 
 button.danger { background: #40202a; }
+button.primary { background: #25406b; }
 
-.hint {
-  opacity: 0.85;
-  font-size: 13px;
-}
+.hint { opacity: 0.85; font-size: 13px; }
 
 #zoomLabel {
   min-width: 64px;
@@ -153,3 +152,50 @@ canvas {
 }
 
 .import input { display: none; }
+
+/* JSON panel */
+#jsonPanel {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 12px;
+}
+
+.jsonHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px 0 4px;
+}
+
+.jsonBtns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+#jsonText {
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  line-height: 1.35;
+  padding: 10px;
+}
+
+.jsonFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 4px;
+}
+
+#jsonMsg {
+  opacity: 0.9;
+  font-size: 13px;
+}
